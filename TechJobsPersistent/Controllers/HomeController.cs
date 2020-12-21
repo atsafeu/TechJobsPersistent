@@ -16,6 +16,7 @@ namespace TechJobsPersistent.Controllers
     public class HomeController : Controller
     {
         private JobDbContext context;
+        private int selectedSkillsLength;
 
         public HomeController(JobDbContext dbContext)
         {
@@ -32,13 +33,41 @@ namespace TechJobsPersistent.Controllers
         [HttpGet("/Add")]
         public IActionResult AddJob()
         {
-            return View();
+            AddJobViewModel addJobViewModel = new AddJobViewModel(context.Employers.ToList(), context.Skills.ToList());
+
+            return View(addJobViewModel);
+        }
+        public IActionResult ProcessAddJobForm(AddJobViewModel addJobViewModel, string[] selectedSkills)
+        {
+
+            if (ModelState.IsValid)
+            {
+
+                Job newJob = new Job
+                {
+                    Name = addJobViewModel.Name,
+                    EmployerId = addJobViewModel.EmployerId,
+                    Employer = context.Employers.Find(addJobViewModel.EmployerId),
+                };
+                for (int i = 0; i < selectedSkills.Length; i++)
+                {
+                    JobSkill newjobSkill = new JobSkill
+                    {
+                        JobId = newJob.Id,
+                        Job = newJob,
+                        SkillId = Int32.Parse(selectedSkills[i])
+                    };
+                    context.JobSkills.Add(newjobSkill);
+                }
+
+                context.Jobs.Add(newJob);
+                context.SaveChanges();
+
+                return Redirect("Index");
+            }
+            return View("Add", addJobViewModel);
         }
 
-        public IActionResult ProcessAddJobForm()
-        {
-            return View();
-        }
 
         public IActionResult Detail(int id)
         {
@@ -55,4 +84,20 @@ namespace TechJobsPersistent.Controllers
             return View(viewModel);
         }
     }
+
+
 }
+    //public class AddJobViewModel
+    //{
+    //    public AddJobViewModel(List<Employer> lists1, List<Skill> lists2)
+    //    {
+    //        Lists1 = lists1;
+    //        Lists2 = lists2;
+    //    }
+
+    //    public List<Employer> Lists1 { get; }
+    //    public List<Skill> Lists2 { get; }
+    //    public string Name { get; internal set; }
+    //    public int EmployerId { get; internal set; }
+    //}
+//}
